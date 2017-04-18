@@ -41,12 +41,21 @@ function record(buffer) {
   if(stopped === true){
     return;
   }
-  if (bufferCount++ < maxBuffers)
-    if (encoder)
+  if (bufferCount++ < maxBuffers){
+    if (encoder){
       encoder.encode(buffer);
-    else if(recBuffers)
-      recBuffers.push(buffer);
-  else
+    }
+    else{
+      if(recBuffers){
+        recBuffers.push(buffer);
+      }
+    }
+
+    msg = {
+        command: "buff"
+      };
+      self.postMessage(msg);
+  }else
     self.postMessage({ command: "timeout" });
 };
 

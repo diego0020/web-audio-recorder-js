@@ -15,6 +15,8 @@
     return target;
   };
 
+  var pending_buffers = 0;
+
   var WORKER_FILE = {
     wav: "WebAudioRecorderWav.js",
     ogg: "WebAudioRecorderOgg.js",
@@ -109,6 +111,8 @@
           }
 
           worker.postMessage({ command: "record", buffer: buffer_channels });
+          pending_buffers +=1;
+        //  console.log(buffer_channels[0].length)
         };
         this.worker.postMessage({
           command: "start",
@@ -134,6 +138,7 @@
 
     finishRecording: function() {
       console.log("stop");
+      console.log(pending_buffers + " pending buffers");
       if (this.isRecording()) {
         this.worker.postMessage({ command: "finish" });
         this.input.disconnect();
@@ -175,6 +180,9 @@
             break;
           case "complete":
             _this.onComplete(_this, data.blob);
+            break;
+          case "buff":
+            pending_buffers-=1;
             break;
           case "error":
             _this.error(data.message);
