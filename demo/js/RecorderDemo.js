@@ -46,7 +46,8 @@
   onGotDevices = function(devInfos) {
     var deviceId, constraint;
     console.log(devInfos);
-    deviceId = devInfos[0].deviceId;
+    //deviceId = devInfos[0].deviceId;
+    deviceId = 'default-audio-input';
     if (deviceId === 'default-audio-input') {
       deviceId = void 0;
     }
@@ -183,20 +184,6 @@
 
   progressComplete = false;
 
-  setProgress = function(progress) {
-    var percent;
-    percent = "" + ((progress * 100).toFixed(1)) + "%";
-    $modalProgress.find('.progress-bar').attr('style', "width: " + percent + ";");
-    $modalProgress.find('.text-center').html(percent);
-    progressComplete = progress === 1;
-  };
-
-  $modalProgress.on('hide.bs.modal', function() {
-    if (!progressComplete) {
-      audioRecorder.cancelEncoding();
-    }
-  });
-
   startRecording = function() {
     $recording.removeClass('hidden');
     $record.html('STOP');
@@ -219,10 +206,6 @@
     $cancel.addClass('hidden');
     if (finish) {
       audioRecorder.finishRecording();
-      if (audioRecorder.options.encodeAfterRecord) {
-        $modalProgress.find('.modal-title').html("Encoding " + (audioRecorder.encoding.toUpperCase()));
-        $modalProgress.modal('show');
-      }
     } else {
       audioRecorder.cancelRecording();
     }
