@@ -33,7 +33,7 @@
 
   audioInLevel.connect(mixer);
 
-  mixer.connect(audioContext.destination);
+  // mixer.connect(audioContext.destination);
 
   audioRecorder = new WebAudioRecorder(mixer, {
     workerDir: 'js/',
