@@ -11,26 +11,6 @@
     audioContext.createScriptProcessor = audioContext.createJavaScriptNode;
   }
 
-  $testToneLevel = $('#test-tone-level');
-
-  $audioInSelect = $('#audio-in-select');
-
-  $audioInLevel = $('#audio-in-level');
-
-  $echoCancellation = $('#echo-cancellation');
-
-  $timeLimit = $('#time-limit');
-
-  $encoding = $('input[name="encoding"]');
-
-  $encodingOption = $('#encoding-option');
-
-  $encodingProcess = $('input[name="encoding-process"]');
-
-  $reportInterval = $('#report-interval');
-
-  $bufferSize = $('#buffer-size');
-
   $recording = $('#recording');
 
   $timeDisplay = $('#time-display');
@@ -43,68 +23,11 @@
 
   $recordingList = $('#recording-list');
 
-  $modalLoading = $('#modal-loading');
-
-  $modalProgress = $('#modal-progress');
-
-  $modalError = $('#modal-error');
-
-  $audioInLevel.attr('disabled', false);
-
-  $audioInLevel[0].valueAsNumber = 0;
-
-  $testToneLevel.attr('disabled', false);
-
-  $testToneLevel[0].valueAsNumber = 0;
-
-  $timeLimit.attr('disabled', false);
-
-  $timeLimit[0].valueAsNumber = 3;
-
-  $encoding.attr('disabled', false);
-
-  $encoding[0].checked = true;
-
-  $encodingProcess.attr('disabled', false);
-
-  $encodingProcess[0].checked = true;
-
-  $reportInterval.attr('disabled', false);
-
-  $reportInterval[0].valueAsNumber = 1;
-
-  $bufferSize.attr('disabled', false);
-
-  testTone = (function() {
-    var lfo, osc, oscMod, output;
-    osc = audioContext.createOscillator();
-    lfo = audioContext.createOscillator();
-    lfo.type = 'square';
-    lfo.frequency.value = 2;
-    oscMod = audioContext.createGain();
-    osc.connect(oscMod);
-    lfo.connect(oscMod.gain);
-    output = audioContext.createGain();
-    output.gain.value = 0.5;
-    oscMod.connect(output);
-    osc.start();
-    lfo.start();
-    return output;
-  })();
-
-  testToneLevel = audioContext.createGain();
-
-  testToneLevel.gain.value = 0;
-
-  testTone.connect(testToneLevel);
-
   audioInLevel = audioContext.createGain();
 
-  audioInLevel.gain.value = 0;
+  audioInLevel.gain.value = 1;
 
   mixer = audioContext.createGain();
-
-  testToneLevel.connect(mixer);
 
   audioIn = void 0;
 
@@ -115,53 +38,77 @@
   audioRecorder = new WebAudioRecorder(mixer, {
     workerDir: 'js/',
     onEncoderLoading: function(recorder, encoding) {
-      $modalLoading.find('.modal-title').html("Loading " + (encoding.toUpperCase()) + " encoder ...");
-      $modalLoading.modal('show');
-    }
-  });
-
-  audioRecorder.onEncoderLoaded = function() {
-    $modalLoading.modal('hide');
-  };
-
-  $testToneLevel.on('input', function() {
-    var level;
-    level = $testToneLevel[0].valueAsNumber / 100;
-    testToneLevel.gain.value = level * level;
-  });
-
-  $audioInLevel.on('input', function() {
-    var level;
-    level = $audioInLevel[0].valueAsNumber / 100;
-    audioInLevel.gain.value = level * level;
+      console.log("loading encoder");
+    },
+    encoding : "mp3"
   });
 
   onGotDevices = function(devInfos) {
-    var index, info, name, options, _i, _len;
-    options = '<option value="no-input" selected>(No input)</option>';
-    index = 0;
-    for (_i = 0, _len = devInfos.length; _i < _len; _i++) {
-      info = devInfos[_i];
-      if (info.kind !== 'audioinput') {
-        continue;
-      }
-      name = info.label || ("Audio in " + (++index));
-      options += "<option value=" + info.deviceId + ">" + name + "</option>";
+    var deviceId, constraint;
+    console.log(devInfos);
+    deviceId = devInfos[0].deviceId;
+    if (deviceId === 'default-audio-input') {
+      deviceId = void 0;
     }
-    $audioInSelect.html(options);
-  };
+    if (navigator.webkitGetUserMedia !== undefined) {
+           constraint = {
+             video: false,
+             audio: {
+               optional: [
+                   {sourceId:deviceId},
+                   {googAutoGainControl: false},
+                   {googAutoGainControl2: false},
+                   {echoCancellation: false},
+                   {googEchoCancellation: false},
+                   {googEchoCancellation2: false},
+                   {googDAEchoCancellation: false},
+                   {googNoiseSuppression: false},
+                   {googNoiseSuppression2: false},
+                   {googHighpassFilter: false},
+                   {googTypingNoiseDetection: false},
+                   {googAudioMirroring: false}
+                 ]
+               }
+             }
+           }
+         else if (navigator.mozGetUserMedia !== undefined) {
+           constraint = {
+             video: false,
+             audio: {
+               deviceId: deviceId ? { exact: deviceId } : void 0,
+               echoCancellation: false,
+               mozAutoGainControl: false
+               //mozNoiseSuppression: false
+               }
+             }
 
-  onError = function(msg) {
-    $modalError.find('.alert').html(msg);
-    $modalError.modal('show');
+          }
+         else {
+           constraint = {
+             video: false,
+             audio: {
+               deviceId: deviceId ? {exact: deviceId} : void 0,
+               echoCancellation: false
+             }
+           }
+         }
+    if ((navigator.mediaDevices != null) && (navigator.mediaDevices.getUserMedia != null)) {
+         navigator.mediaDevices.getUserMedia(constraint).then(onGotAudioIn)["catch"](function(err) {
+           console.error("Could not get audio media device: " + err);
+         });
+     } else {
+       navigator.getUserMedia(constraint, onGotAudioIn, function() {
+         console.error("Could not get audio media device: " + err);
+       });
+   }
   };
 
   if ((navigator.mediaDevices != null) && (navigator.mediaDevices.enumerateDevices != null)) {
     navigator.mediaDevices.enumerateDevices().then(onGotDevices)["catch"](function(err) {
-      return onError("Could not enumerate audio devices: " + err);
+      return console.error("Could not enumerate audio devices: " + err);
     });
   } else {
-    $audioInSelect.html('<option value="no-input" selected>(No input)</option><option value="default-audio-input">Default audio input</option>');
+    console.log("loaded")
   }
 
   onGotAudioIn = function(stream) {
@@ -170,85 +117,12 @@
     }
     audioIn = audioContext.createMediaStreamSource(stream);
     audioIn.connect(audioInLevel);
-    return $audioInLevel.removeClass('hidden');
+    return ;
   };
-
-  onChangeAudioIn = function() {
-    var constraint, deviceId;
-    deviceId = $audioInSelect[0].value;
-    if (deviceId === 'no-input') {
-      if (audioIn != null) {
-        audioIn.disconnect();
-      }
-      audioIn = void 0;
-      $audioInLevel.addClass('hidden');
-    } else {
-      if (deviceId === 'default-audio-input') {
-        deviceId = void 0;
-      }
-      constraint = {
-        audio: {
-          deviceId: deviceId != null ? {
-            exact: deviceId
-          } : void 0,
-          mandatory: {
-            echoCancellation: $echoCancellation[0].checked
-          }
-        }
-      };
-      if ((navigator.mediaDevices != null) && (navigator.mediaDevices.getUserMedia != null)) {
-        navigator.mediaDevices.getUserMedia(constraint).then(onGotAudioIn)["catch"](function(err) {
-          return onError("Could not get audio media device: " + err);
-        });
-      } else {
-        navigator.getUserMedia(constraint, onGotAudioIn, function() {
-          return onError("Could not get audio media device: " + err);
-        });
-      }
-    }
-  };
-
-  $audioInSelect.on('change', onChangeAudioIn);
-
-  $echoCancellation.on('change', onChangeAudioIn);
-
-  plural = function(n) {
-    if (n > 1) {
-      return 's';
-    } else {
-      return '';
-    }
-  };
-
-  $timeLimit.on('input', function() {
-    var min;
-    min = $timeLimit[0].valueAsNumber;
-    $('#time-limit-text').html("" + min + " minute" + (plural(min)));
-  });
-
-  OGG_QUALITY = [-0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0];
-
-  OGG_KBPS = [45, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 500];
 
   MP3_BIT_RATE = [64, 80, 96, 112, 128, 160, 192, 224, 256, 320];
 
   ENCODING_OPTION = {
-    wav: {
-      label: '',
-      hidden: true,
-      max: 1,
-      text: function(val) {
-        return '';
-      }
-    },
-    ogg: {
-      label: 'Quality',
-      hidden: false,
-      max: OGG_QUALITY.length - 1,
-      text: function(val) {
-        return "" + (OGG_QUALITY[val].toFixed(1)) + " (~" + OGG_KBPS[val] + "kbps)";
-      }
-    },
     mp3: {
       label: 'Bit rate',
       hidden: false,
@@ -260,46 +134,10 @@
   };
 
   optionValue = {
-    wav: null,
-    ogg: 6,
-    mp3: 5
+    mp3: 9
   };
 
-  $encoding.on('click', function(event) {
-    var encoding, option;
-    encoding = $(event.target).attr('encoding');
-    audioRecorder.setEncoding(encoding);
-    option = ENCODING_OPTION[encoding];
-    $('#encoding-option-label').html(option.label);
-    $('#encoding-option-text').html(option.text(optionValue[encoding]));
-    $encodingOption.toggleClass('hidden', option.hidden).attr('max', option.max);
-    $encodingOption[0].valueAsNumber = optionValue[encoding];
-  });
-
-  $encodingOption.on('input', function() {
-    var encoding, option;
-    encoding = audioRecorder.encoding;
-    option = ENCODING_OPTION[encoding];
-    optionValue[encoding] = $encodingOption[0].valueAsNumber;
-    $('#encoding-option-text').html(option.text(optionValue[encoding]));
-  });
-
   encodingProcess = 'background';
-
-  $encodingProcess.on('click', function(event) {
-    var hidden;
-    encodingProcess = $(event.target).attr('mode');
-    hidden = encodingProcess === 'background';
-    $('#report-interval-label').toggleClass('hidden', hidden);
-    $reportInterval.toggleClass('hidden', hidden);
-    $('#report-interval-text').toggleClass('hidden', hidden);
-  });
-
-  $reportInterval.on('input', function() {
-    var sec;
-    sec = $reportInterval[0].valueAsNumber;
-    $('#report-interval-text').html("" + sec + " second" + (plural(sec)));
-  });
 
   defaultBufSz = (function() {
     var processor;
@@ -311,21 +149,8 @@
 
   iDefBufSz = BUFFER_SIZE.indexOf(defaultBufSz);
 
-  updateBufferSizeText = function() {
-    var iBufSz, text;
-    iBufSz = $bufferSize[0].valueAsNumber;
-    text = "" + BUFFER_SIZE[iBufSz];
-    if (iBufSz === iDefBufSz) {
-      text += ' (browser default)';
-    }
-    $('#buffer-size-text').html(text);
-  };
 
-  $bufferSize.on('input', updateBufferSizeText);
-
-  $bufferSize[0].valueAsNumber = iDefBufSz;
-
-  updateBufferSizeText();
+  // updateBufferSizeText();
 
   saveRecording = function(blob, enc) {
     var html, time, url;
@@ -372,29 +197,14 @@
     }
   });
 
-  disableControlsOnRecord = function(disabled) {
-    $audioInSelect.attr('disabled', disabled);
-    $echoCancellation.attr('disabled', disabled);
-    $timeLimit.attr('disabled', disabled);
-    $encoding.attr('disabled', disabled);
-    $encodingOption.attr('disabled', disabled);
-    $encodingProcess.attr('disabled', disabled);
-    $reportInterval.attr('disabled', disabled);
-    $bufferSize.attr('disabled', disabled);
-  };
-
   startRecording = function() {
     $recording.removeClass('hidden');
     $record.html('STOP');
     $cancel.removeClass('hidden');
-    disableControlsOnRecord(true);
     audioRecorder.setOptions({
-      timeLimit: $timeLimit[0].valueAsNumber * 60,
-      encodeAfterRecord: encodingProcess === 'separate',
-      progressInterval: $reportInterval[0].valueAsNumber * 1000,
-      ogg: {
-        quality: OGG_QUALITY[optionValue.ogg]
-      },
+      timeLimit: 30 * 60,
+      encodeAfterRecord: false,
+      progressInterval: 10 * 1000,
       mp3: {
         bitRate: MP3_BIT_RATE[optionValue.mp3]
       }
@@ -407,7 +217,6 @@
     $recording.addClass('hidden');
     $record.html('RECORD');
     $cancel.addClass('hidden');
-    disableControlsOnRecord(false);
     if (finish) {
       audioRecorder.finishRecording();
       if (audioRecorder.options.encodeAfterRecord) {
@@ -440,9 +249,6 @@
   };
 
   audioRecorder.onComplete = function(recorder, blob) {
-    if (recorder.options.encodeAfterRecord) {
-      $modalProgress.modal('hide');
-    }
     saveRecording(blob, recorder.encoding);
   };
 
