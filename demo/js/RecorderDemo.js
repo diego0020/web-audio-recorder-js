@@ -197,7 +197,6 @@
       }
     });
     audioRecorder.startRecording();
-    setProgress(0);
   };
 
   stopRecording = function(finish) {
@@ -227,9 +226,6 @@
     stopRecording(true);
   };
 
-  audioRecorder.onEncodingProgress = function(recorder, progress) {
-    setProgress(progress);
-  };
 
   audioRecorder.onComplete = function(recorder, blob) {
     saveRecording(blob, recorder.encoding);
