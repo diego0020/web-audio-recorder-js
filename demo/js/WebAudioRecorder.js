@@ -16,6 +16,7 @@
   };
 
   var pending_buffers = 0;
+  var lastPlayBackTime = 0;
 
   var WORKER_FILE = {
     wav: "WebAudioRecorderWav.js",
@@ -104,15 +105,21 @@
         }
         this.processor.onaudioprocess = function(event) {
 
-
+          // hardcode two channels
+          event.inputBuffer.copyFromChannel(buffer_channels[0],0);
+          event.inputBuffer.copyFromChannel(buffer_channels[1],1);
+          /*
           for (var ch = 0; ch < numChannels; ++ch){
             //buffer[ch] = event.inputBuffer.getChannelData(ch);
+            //buffer_channels[ch] = new Float32Array(this.processor.bufferSize);
             event.inputBuffer.copyFromChannel(buffer_channels[ch],ch);
-          }
+          }*/
 
+          //worker.postMessage({ command: "record", buffer: buffer_channels }, buffer_channels);
           worker.postMessage({ command: "record", buffer: buffer_channels });
           pending_buffers +=1;
-        //  console.log(buffer_channels[0].length)
+          lastPlayBackTime = event.playbackTime;
+          //console.log(buffer_channels[0].length)
         };
         this.worker.postMessage({
           command: "start",
@@ -137,8 +144,12 @@
     },
 
     finishRecording: function() {
+      var currentTime = this.context.currentTime;
+      var latency = currentTime - lastPlayBackTime;
       console.log("stop");
       console.log(pending_buffers + " pending buffers");
+      console.log("latency: "+latency);
+
       if (this.isRecording()) {
         this.worker.postMessage({ command: "finish" });
         this.input.disconnect();
