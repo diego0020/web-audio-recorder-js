@@ -93,12 +93,22 @@
         this.processor = this.context.createScriptProcessor(
                                 this.options.bufferSize,
                                 this.numChannels, this.numChannels);
+        console.log(this.processor.bufferSize);
         this.input.connect(this.processor);
         this.processor.connect(this.context.destination);
+        var buffer_channels = [];
+        for (var ch = 0; ch < numChannels; ++ch){
+          buffer_channels[ch] = new Float32Array(this.processor.bufferSize);
+        }
         this.processor.onaudioprocess = function(event) {
-          for (var ch = 0; ch < numChannels; ++ch)
-            buffer[ch] = event.inputBuffer.getChannelData(ch);
-          worker.postMessage({ command: "record", buffer: buffer });
+
+
+          for (var ch = 0; ch < numChannels; ++ch){
+            //buffer[ch] = event.inputBuffer.getChannelData(ch);
+            event.inputBuffer.copyFromChannel(buffer_channels[ch],ch);
+          }
+
+          worker.postMessage({ command: "record", buffer: buffer_channels });
         };
         this.worker.postMessage({
           command: "start",
@@ -114,22 +124,23 @@
 
     cancelRecording: function() {
       if (this.isRecording()) {
+        this.worker.postMessage({ command: "cancel" });
         this.input.disconnect();
         this.processor.disconnect();
         delete this.processor;
-        this.worker.postMessage({ command: "cancel" });
       } else
         this.error("cancelRecording: no recording is running");
     },
 
     finishRecording: function() {
+      console.log("stop");
       if (this.isRecording()) {
+        this.worker.postMessage({ command: "finish" });
         this.input.disconnect();
         this.processor.disconnect();
         delete this.processor;
-        this.worker.postMessage({ command: "finish" });
       } else
-        this.error("finishRecording: no recording is running");
+        console.error("finishRecording: no recording is running");
     },
 
     cancelEncoding: function() {
