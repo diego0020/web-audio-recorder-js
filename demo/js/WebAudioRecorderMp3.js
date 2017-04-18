@@ -51,7 +51,7 @@ function record(buffer) {
       }
     }
 
-    msg = {
+    var msg = {
         command: "buff"
       };
       self.postMessage(msg);
@@ -79,7 +79,7 @@ function finish() {
     }
     postProgress(1);
   }
-  msg = {
+  var msg = {
     command: "complete",
     blob: encoder.finish(options.mp3.mimeType)
   };
