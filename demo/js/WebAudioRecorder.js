@@ -17,6 +17,7 @@
 
   var pending_buffers = 0;
   var lastPlayBackTime = 0;
+  var stopTime = 0;
 
   var WORKER_FILE = {
     wav: "WebAudioRecorderWav.js",
@@ -144,27 +145,28 @@
     },
 
     finishRecording: function() {
-      var currentTime = this.context.currentTime;
-      var latency = currentTime - lastPlayBackTime;
-      console.log("stop");
-      console.log(pending_buffers + " pending buffers");
-      console.log("latency: "+latency);
-      if (latency>-1){
-        this.close_recording();
-      }else{
-        console.log("latency to large, waiting a little...");
-        window.setTimeout(()=>this.finishRecording(),100);
-      }
+      stopTime = this.context.currentTime;
+      this.close_recording();
     },
 
     close_recording: function(){
-      if (this.isRecording()) {
-        this.worker.postMessage({ command: "finish" });
-        this.input.disconnect();
-        this.processor.disconnect();
-        delete this.processor;
-      } else
-        console.error("finishRecording: no recording is running");
+      var latency = stopTime - lastPlayBackTime;
+      if (latency>-1){
+        console.log("stop");
+        console.log(pending_buffers + " pending buffers");
+        console.log("latency: "+latency);
+        if (this.isRecording()) {
+          this.worker.postMessage({ command: "finish" });
+          this.input.disconnect();
+          this.processor.disconnect();
+          delete this.processor;
+        } else
+          console.error("finishRecording: no recording is running");
+      }else{
+        console.log("latency to large, waiting a little...");
+        window.setTimeout(()=>this.close_recording(),100);
+      }
+
     },
 
     cancelEncoding: function() {
