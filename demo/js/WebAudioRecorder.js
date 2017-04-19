@@ -151,6 +151,7 @@
 
     close_recording: function(){
       var latency = stopTime - lastPlayBackTime;
+      console.log("Latency: "+latency);
       if (latency>-1){
         console.log("stop");
         console.log(pending_buffers + " pending buffers");
@@ -166,7 +167,6 @@
         console.log("latency to large, waiting a little...");
         window.setTimeout(()=>this.close_recording(),100);
       }
-
     },
 
     cancelEncoding: function() {
