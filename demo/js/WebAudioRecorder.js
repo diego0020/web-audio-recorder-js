@@ -153,7 +153,7 @@
         this.close_recording();
       }else{
         console.log("latency to large, waiting a little...");
-        window.setTimeout(this.finishRecording,100);
+        window.setTimeout(()=>this.finishRecording(),100);
       }
     },
 
