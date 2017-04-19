@@ -149,7 +149,7 @@
       console.log("stop");
       console.log(pending_buffers + " pending buffers");
       console.log("latency: "+latency);
-      if (latency>-2){
+      if (latency>-1){
         this.close_recording();
       }else{
         console.log("latency to large, waiting a little...");
