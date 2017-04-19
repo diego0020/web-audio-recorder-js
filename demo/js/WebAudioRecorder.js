@@ -152,7 +152,6 @@
       }
       stopRequested = true;
       stopTime = lastPlayBackTime;
-      this.input.disconnect();
       this.close_recording();
     },
 
@@ -166,8 +165,8 @@
         console.log("latency: "+latency);
         if (this.isRecording()) {
           this.worker.postMessage({ command: "finish" });
+          this.input.disconnect();
           this.processor.disconnect();
-
         } else
           console.error("finishRecording: no recording is running");
       }else{
