@@ -145,14 +145,15 @@
     },
 
     finishRecording: function() {
-      stopTime = this.context.currentTime;
+      stopTime = lastPlayBackTime;
       this.close_recording();
     },
 
     close_recording: function(){
-      var latency = stopTime - lastPlayBackTime;
+      var ctxt_time = this.context.currentTime;
+      var latency = ctxt_time - stopTime;
       console.log("Latency: "+latency);
-      if (latency>-1){
+      if (latency>0){
         console.log("stop");
         console.log(pending_buffers + " pending buffers");
         console.log("latency: "+latency);
