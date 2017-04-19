@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>WebAudioRecorder.js demo</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+  </head>
+  <body>
+    <div class="container">
+      <h1><a href="https://github.com/higuma/web-audio-recorder-js">WebAudioRecorder.js</a> demo</h1>
+      <p>Audio recording to WAV / OGG / MP3 with Web Audio API</p>
+      <hr>
+    </div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+    <script>
+    window.audioWorklet.import('bitcrusher.js').then(function () {
+      let context = new AudioContext();
+      let osc = new OscillatorNode(context);
+      let amp = new GainNode(context);
+
+      // Create a worklet node. 'BitCrusher' identifies the
+      // AudioWorkletProcessor previously registered when
+      // bitcrusher.js was imported. The options automatically
+      // initialize the correspondingly named AudioParams.
+      let bitcrusher = new AudioWorkletNode(context, 'BitCrusher', {
+        bitDepth: 8,
+        frequencyReduction: 0.5
+      });
+
+      osc.connect(bitcrusher).connect(amp).connect(context.destination);
+      osc.start();
+    });
+    </script>
+  </body>
+</html>
