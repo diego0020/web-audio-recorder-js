@@ -149,7 +149,15 @@
       console.log("stop");
       console.log(pending_buffers + " pending buffers");
       console.log("latency: "+latency);
+      if (latency>-2){
+        this.close_recording();
+      }else{
+        console.log("latency to large, waiting a little...");
+        window.setTimeout(this.finishRecording,100);
+      }
+    },
 
+    close_recording: function(){
       if (this.isRecording()) {
         this.worker.postMessage({ command: "finish" });
         this.input.disconnect();
@@ -157,7 +165,7 @@
         delete this.processor;
       } else
         console.error("finishRecording: no recording is running");
-    },
+    }
 
     cancelEncoding: function() {
       if (this.options.encodeAfterRecord)
