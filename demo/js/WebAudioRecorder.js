@@ -165,7 +165,7 @@
         delete this.processor;
       } else
         console.error("finishRecording: no recording is running");
-    }
+    },
 
     cancelEncoding: function() {
       if (this.options.encodeAfterRecord)
