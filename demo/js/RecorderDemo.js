@@ -1,6 +1,8 @@
 (function() {
   var $audioInLevel, $audioInSelect, $bufferSize, $cancel, $dateTime, $echoCancellation, $encoding, $encodingOption, $encodingProcess, $modalError, $modalLoading, $modalProgress, $record, $recording, $recordingList, $reportInterval, $testToneLevel, $timeDisplay, $timeLimit, BUFFER_SIZE, ENCODING_OPTION, MP3_BIT_RATE, OGG_KBPS, OGG_QUALITY, URL, audioContext, audioIn, audioInLevel, audioRecorder, defaultBufSz, disableControlsOnRecord, encodingProcess, iDefBufSz, minSecStr, mixer, onChangeAudioIn, onError, onGotAudioIn, onGotDevices, optionValue, plural, progressComplete, saveRecording, setProgress, startRecording, stopRecording, testTone, testToneLevel, updateBufferSizeText, updateDateTime;
 
+  var analyzerNode, canvasWidth, canvasHeight;
+
   navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
 
   URL = window.URL || window.webkitURL;
@@ -116,8 +118,12 @@
     if (audioIn != null) {
       audioIn.disconnect();
     }
+    analyzerNode = audioContext.createAnalyser();
+    analyzerNode.fftSize = 2048;
     audioIn = audioContext.createMediaStreamSource(stream);
     audioIn.connect(audioInLevel);
+    audioIn.connect(analyzerNode);
+    window.requestAnimationFrame(update_visualization);
     return ;
   };
 
@@ -234,5 +240,49 @@
   audioRecorder.onError = function(recorder, message) {
     onError(message);
   };
+
+  function create_visualization(){
+    canvasWidth = 300;
+    canvasHeight = 200;
+    var container = $('#visualization');
+    var canvas = document.createElement("canvas");
+    $(canvas).attr('width',canvasWidth);
+    $(canvas).attr('height',canvasHeight);
+    container.append(canvas);
+    var ctxt = canvas.getContext('2d');
+    ctxt.fillStyle = 'green';
+    ctxt.fillRect(0,0,canvasWidth,canvasHeight);
+  }
+
+  function update_visualization(){
+    var SPACING = 3;
+    var BAR_WIDTH = 1;
+    var analyserContext = $('#visualization canvas').first()[0].getContext('2d');
+    var numBars = Math.round(canvasWidth / SPACING);
+    var freqByteData = new Uint8Array(analyzerNode.frequencyBinCount);
+
+    analyzerNode.getByteFrequencyData(freqByteData);
+
+    analyserContext.clearRect(0, 0, canvasWidth, canvasHeight);
+    analyserContext.fillStyle = '#F6D565';
+    analyserContext.lineCap = 'round';
+    var multiplier = analyzerNode.frequencyBinCount / numBars;
+
+    // Draw rectangle for each frequency bin.
+    for (var i = 0; i < numBars; ++i) {
+        var magnitude = 0;
+        var offset = Math.floor( i * multiplier );
+        // gotta sum/average the block, or we miss narrow-bandwidth spikes
+        for (var j = 0; j< multiplier; j++)
+            magnitude += freqByteData[offset + j];
+        magnitude = magnitude / multiplier;
+        var magnitude2 = freqByteData[i * multiplier];
+        analyserContext.fillStyle = "hsl( " + Math.round((i*360)/numBars) + ", 100%, 50%)";
+        analyserContext.fillRect(i * SPACING, canvasHeight, BAR_WIDTH, -magnitude);
+    }
+    window.requestAnimationFrame(update_visualization);
+  }
+
+  create_visualization();
 
 }).call(this);
