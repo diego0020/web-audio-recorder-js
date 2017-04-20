@@ -119,7 +119,8 @@
       audioIn.disconnect();
     }
     analyzerNode = audioContext.createAnalyser();
-    analyzerNode.fftSize = 2048;
+    analyzerNode.fftSize = 32;
+    analyzerNode.smoothingTimeConstant = 0.95;
     audioIn = audioContext.createMediaStreamSource(stream);
     audioIn.connect(audioInLevel);
     audioIn.connect(analyzerNode);
@@ -255,10 +256,10 @@
   }
 
   function update_visualization(){
-    var SPACING = 3;
-    var BAR_WIDTH = 1;
+    var SPACING = 15;
+    var BAR_WIDTH = 10;
     var analyserContext = $('#visualization canvas').first()[0].getContext('2d');
-    var numBars = Math.round(canvasWidth / SPACING);
+    var numBars = 16;
     var freqByteData = new Uint8Array(analyzerNode.frequencyBinCount);
 
     analyzerNode.getByteFrequencyData(freqByteData);
@@ -277,7 +278,7 @@
             magnitude += freqByteData[offset + j];
         magnitude = magnitude / multiplier;
         var magnitude2 = freqByteData[i * multiplier];
-        analyserContext.fillStyle = "hsl( " + Math.round((i*360)/numBars) + ", 100%, 50%)";
+        analyserContext.fillStyle = "gray";
         analyserContext.fillRect(i * SPACING, canvasHeight, BAR_WIDTH, -magnitude);
     }
     window.requestAnimationFrame(update_visualization);
