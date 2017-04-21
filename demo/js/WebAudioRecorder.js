@@ -161,9 +161,10 @@
       var ctxt_time = this.context.currentTime;
       var latency = ctxt_time - stopTime;
       var extTime = Date.now();
+      console.log("Elapsed time: "+(extTime - stopTimeExternal));
       console.log("Latency: "+latency);
       console.log(pending_buffers + " pending buffers");
-      if (latency>0 || (extTime - stopTimeExternal > 2000)){
+      if (latency>0 || (extTime - stopTimeExternal > 20000)){
         console.log("stop");
         console.log("latency: "+latency);
         if (this.isRecording()) {
