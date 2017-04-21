@@ -18,6 +18,7 @@
   var pending_buffers = 0;
   var lastPlayBackTime = 0;
   var stopTime = 0;
+  var stopTimeExternal = 0;
   var stopRequested = false;
 
   var WORKER_FILE = {
@@ -152,15 +153,17 @@
       }
       stopRequested = true;
       stopTime = lastPlayBackTime;
+      stopTimeExternal = Date.now();
       this.close_recording();
     },
 
     close_recording: function(){
       var ctxt_time = this.context.currentTime;
       var latency = ctxt_time - stopTime;
+      var extTime = Date.now();
       console.log("Latency: "+latency);
       console.log(pending_buffers + " pending buffers");
-      if (latency>0){
+      if (latency>0 || (extTime - stopTimeExternal > 2000)){
         console.log("stop");
         console.log("latency: "+latency);
         if (this.isRecording()) {
