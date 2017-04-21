@@ -6,8 +6,7 @@ var NUM_CH = 2, // constant
     maxBuffers = undefined,
     encoder = undefined,
     recBuffers = undefined,
-    bufferCount = 0,
-    stopped = true;
+    bufferCount = 0;
 
 function error(message) {
   self.postMessage({ command: "error", message: "mp3: " + message });
@@ -30,7 +29,6 @@ function setOptions(opt) {
 
 function start(bufferSize) {
   maxBuffers = Math.ceil(options.timeLimit * sampleRate / bufferSize);
-  stopped = false;
   if (options.encodeAfterRecord)
     recBuffers = [];
   else
@@ -38,24 +36,12 @@ function start(bufferSize) {
 }
 
 function record(buffer) {
-  if(stopped === true){
-    return;
-  }
-  if (bufferCount++ < maxBuffers){
-    if (encoder){
+  if (bufferCount++ < maxBuffers)
+    if (encoder)
       encoder.encode(buffer);
-    }
-    else{
-      if(recBuffers){
-        recBuffers.push(buffer);
-      }
-    }
-
-    var msg = {
-        command: "buff"
-      };
-      self.postMessage(msg);
-  }else
+    else
+      recBuffers.push(buffer);
+  else
     self.postMessage({ command: "timeout" });
 };
 
@@ -64,19 +50,30 @@ function postProgress(progress) {
 };
 
 function finish() {
-  stopped = true;
-  var msg = {
+  if (recBuffers) {
+    postProgress(0);
+    encoder = new Mp3LameEncoder(sampleRate, options.mp3.bitRate);
+    var timeout = Date.now() + options.progressInterval;
+    while (recBuffers.length > 0) {
+      encoder.encode(recBuffers.shift());
+      var now = Date.now();
+      if (now > timeout) {
+        postProgress((bufferCount - recBuffers.length) / bufferCount);
+        timeout = now + options.progressInterval;
+      }
+    }
+    postProgress(1);
+  }
+  self.postMessage({
     command: "complete",
     blob: encoder.finish(options.mp3.mimeType)
-  };
-  self.postMessage(msg);
+  });
   cleanup();
 };
 
 function cleanup() {
   encoder = recBuffers = undefined;
   bufferCount = 0;
-  stopped = false;
 }
 
 self.onmessage = function(event) {
