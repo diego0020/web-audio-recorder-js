@@ -164,7 +164,8 @@
       console.log("Elapsed time: "+(extTime - stopTimeExternal));
       console.log("Latency: "+latency);
       console.log(pending_buffers + " pending buffers");
-      if (latency>0 || (extTime - stopTimeExternal > 20000)){
+      //if (latency>0 || (extTime - stopTimeExternal > 20000)){
+      if (true){
         console.log("stop");
         console.log("latency: "+latency);
         if (this.isRecording()) {
