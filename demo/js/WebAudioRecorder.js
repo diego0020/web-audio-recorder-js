@@ -89,7 +89,7 @@
       }
     },
 
-    startRecording: function() {
+    startRecording2: function() {
       if (this.isRecording())
         this.error("startRecording: previous recording is running");
       else {
@@ -133,6 +133,31 @@
       }
     },
 
+        startRecording: function() {
+      if (this.isRecording())
+        this.error("startRecording: previous recording is running");
+      else {
+        var numChannels = this.numChannels,
+            buffer = this.buffer,
+            worker = this.worker;
+        this.processor = this.context.createScriptProcessor(
+                                this.options.bufferSize,
+                                this.numChannels, this.numChannels);
+        this.input.connect(this.processor);
+        this.processor.connect(this.context.destination);
+        this.processor.onaudioprocess = function(event) {
+          for (var ch = 0; ch < numChannels; ++ch)
+            buffer[ch] = event.inputBuffer.getChannelData(ch);
+          worker.postMessage({ command: "record", buffer: buffer });
+        };
+        this.worker.postMessage({
+          command: "start",
+          bufferSize: this.processor.bufferSize
+        });
+        this.startTime = Date.now();
+      }
+    },
+
     recordingTime: function() {
       return this.isRecording() ? (Date.now() - this.startTime) * 0.001 : null;
     },
@@ -147,7 +172,7 @@
         this.error("cancelRecording: no recording is running");
     },
 
-    finishRecording: function() {
+    finishRecording2: function() {
       if (stopRequested === true){
         return;
       }
@@ -155,6 +180,16 @@
       stopTime = lastPlayBackTime;
       stopTimeExternal = Date.now();
       this.close_recording();
+    },
+
+        finishRecording: function() {
+      if (this.isRecording()) {
+        this.input.disconnect();
+        this.processor.disconnect();
+        delete this.processor;
+        this.worker.postMessage({ command: "finish" });
+      } else
+        this.error("finishRecording: no recording is running");
     },
 
     close_recording: function(){
