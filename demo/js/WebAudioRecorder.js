@@ -120,7 +120,7 @@
           }
 
           //worker.postMessage({ command: "record", buffer: buffer_channels }, buffer_channels);
-          worker.postMessage({ command: "record", buffer: buffer_channels });
+          worker.postMessage({ command: "record", buffer: buffer });
           //pending_buffers +=1;
           lastPlayBackTime = event.playbackTime;
           //console.log(buffer_channels[0].length)
