@@ -54,7 +54,7 @@ function record(buffer) {
     var msg = {
         command: "buff"
       };
-      //self.postMessage(msg);
+      self.postMessage(msg);
   }else
     self.postMessage({ command: "timeout" });
 };
