@@ -142,7 +142,7 @@
   };
 
   optionValue = {
-    mp3: 9
+    mp3: 0
   };
 
   encodingProcess = 'background';
