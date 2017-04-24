@@ -294,7 +294,7 @@
   optionValue = {
     wav: null,
     ogg: 6,
-    mp3: 5
+    mp3: 9
   };
 
   function set_mp3_encoding(){
