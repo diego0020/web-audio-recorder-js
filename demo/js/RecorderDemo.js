@@ -123,7 +123,7 @@
     analyzerNode.smoothingTimeConstant = 0.95;
     audioIn = audioContext.createMediaStreamSource(stream);
     audioIn.connect(audioInLevel);
-    //audioIn.connect(analyzerNode);
+    audioIn.connect(analyzerNode);
     window.requestAnimationFrame(update_visualization);
     return ;
   };
@@ -281,7 +281,7 @@
         analyserContext.fillStyle = "gray";
         analyserContext.fillRect(i * SPACING, canvasHeight, BAR_WIDTH, -magnitude);
     }
-    //window.requestAnimationFrame(update_visualization);
+    window.requestAnimationFrame(update_visualization);
   }
 
   create_visualization();
