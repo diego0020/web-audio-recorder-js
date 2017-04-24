@@ -15,9 +15,15 @@
     return target;
   };
 
+  var pending_buffers = 0;
+  var lastPlayBackTime = 0;
+  var stopTime = 0;
+  var stopTimeExternal = 0;
+  var stopRequested = false;
+
   var WORKER_FILE = {
-    wav: "WebAudioRecorderWav.min.js",
-    ogg: "WebAudioRecorderOgg.min.js",
+    wav: "WebAudioRecorderWav.js",
+    ogg: "WebAudioRecorderOgg.js",
     mp3: "WebAudioRecorderMp3.js"
   };
 
@@ -83,7 +89,51 @@
       }
     },
 
-    startRecording: function() {
+    startRecording2: function() {
+      if (this.isRecording())
+        this.error("startRecording: previous recording is running");
+      else {
+        var numChannels = this.numChannels,
+            buffer = this.buffer,
+            worker = this.worker;
+        this.processor = this.context.createScriptProcessor(
+                                this.options.bufferSize,
+                                this.numChannels, this.numChannels);
+        console.log(this.processor.bufferSize);
+        stopRequested = false;
+        this.input.connect(this.processor);
+        this.processor.connect(this.context.destination);
+        var buffer_channels = [];
+        for (var ch = 0; ch < numChannels; ++ch){
+          //buffer_channels[ch] = new Float32Array(this.processor.bufferSize);
+        }
+        this.processor.onaudioprocess = function(event) {
+
+          // hardcode two channels
+          //event.inputBuffer.copyFromChannel(buffer_channels[0],0);
+          //event.inputBuffer.copyFromChannel(buffer_channels[1],1);
+          
+          for (var ch = 0; ch < numChannels; ++ch){
+            buffer[ch] = event.inputBuffer.getChannelData(ch);
+            //buffer_channels[ch] = new Float32Array(this.processor.bufferSize);
+            //event.inputBuffer.copyFromChannel(buffer_channels[ch],ch);
+          }
+
+          //worker.postMessage({ command: "record", buffer: buffer_channels }, buffer_channels);
+          worker.postMessage({ command: "record", buffer: buffer });
+          //pending_buffers +=1;
+          lastPlayBackTime = event.playbackTime;
+          //console.log(buffer_channels[0].length)
+        };
+        this.worker.postMessage({
+          command: "start",
+          bufferSize: this.processor.bufferSize
+        });
+        this.startTime = Date.now();
+      }
+    },
+
+        startRecording: function() {
       if (this.isRecording())
         this.error("startRecording: previous recording is running");
       else {
@@ -114,15 +164,25 @@
 
     cancelRecording: function() {
       if (this.isRecording()) {
+        this.worker.postMessage({ command: "cancel" });
         this.input.disconnect();
         this.processor.disconnect();
         delete this.processor;
-        this.worker.postMessage({ command: "cancel" });
       } else
         this.error("cancelRecording: no recording is running");
     },
 
-    finishRecording: function() {
+    finishRecording2: function() {
+      if (stopRequested === true){
+        return;
+      }
+      stopRequested = true;
+      stopTime = lastPlayBackTime;
+      stopTimeExternal = Date.now();
+      this.close_recording();
+    },
+
+        finishRecording: function() {
       if (this.isRecording()) {
         this.input.disconnect();
         this.processor.disconnect();
@@ -130,6 +190,29 @@
         this.worker.postMessage({ command: "finish" });
       } else
         this.error("finishRecording: no recording is running");
+    },
+
+    close_recording: function(){
+      var ctxt_time = this.context.currentTime;
+      var latency = ctxt_time - stopTime;
+      var extTime = Date.now();
+      console.log("Elapsed time: "+(extTime - stopTimeExternal));
+      console.log("Latency: "+latency);
+      console.log(pending_buffers + " pending buffers");
+      //if (latency>0 || (extTime - stopTimeExternal > 20000)){
+      if (true){
+        console.log("stop");
+        console.log("latency: "+latency);
+        if (this.isRecording()) {
+          this.worker.postMessage({ command: "finish" });
+          this.input.disconnect();
+          this.processor.disconnect();
+        } else
+          console.error("finishRecording: no recording is running");
+      }else{
+        console.log("latency to large, waiting a little...");
+        window.setTimeout(()=>this.close_recording(),100);
+      }
     },
 
     cancelEncoding: function() {
@@ -163,7 +246,12 @@
             _this.onEncodingProgress(_this, data.progress);
             break;
           case "complete":
+            console.log("Complete");
+            delete _this.processor;
             _this.onComplete(_this, data.blob);
+            break;
+          case "buff":
+            pending_buffers-=1;
             break;
           case "error":
             _this.error(data.message);
