@@ -210,7 +210,6 @@
             _this.onEncodingProgress(_this, data.progress);
             break;
           case "complete":
-            console.log("Complete");
             delete _this.processor;
             _this.onComplete(_this, data.blob);
             break;
