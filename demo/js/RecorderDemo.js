@@ -100,17 +100,17 @@
 
   audioInLevel = audioContext.createGain();
 
-  audioInLevel.gain.value = 1;
+  audioInLevel.gain.value = 0;
 
   mixer = audioContext.createGain();
 
-  //testToneLevel.connect(mixer);
+  testToneLevel.connect(mixer);
 
   audioIn = void 0;
 
   audioInLevel.connect(mixer);
 
-  //mixer.connect(audioContext.destination);
+  mixer.connect(audioContext.destination);
 
   audioRecorder = new WebAudioRecorder(mixer, {
     workerDir: 'js/',
