@@ -265,13 +265,7 @@
     mp3: 5
   };
 
-  function set_mp3_encoding(){
-    audioRecorder.setEncoding('mp3');
-    option = ENCODING_OPTION['mp3'];
-  }
-
   $encoding.on('click', function(event) {
-    return;
     var encoding, option;
     encoding = $(event.target).attr('encoding');
     audioRecorder.setEncoding(encoding);
@@ -455,7 +449,5 @@
   audioRecorder.onError = function(recorder, message) {
     onError(message);
   };
-
-  set_mp3_encoding();
 
 }).call(this);
