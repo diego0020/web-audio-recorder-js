@@ -105,23 +105,23 @@
         this.processor.connect(this.context.destination);
         var buffer_channels = [];
         for (var ch = 0; ch < numChannels; ++ch){
-          //buffer_channels[ch] = new Float32Array(this.processor.bufferSize);
+          buffer_channels[ch] = new Float32Array(this.processor.bufferSize);
         }
         this.processor.onaudioprocess = function(event) {
 
           // hardcode two channels
-          //event.inputBuffer.copyFromChannel(buffer_channels[0],0);
-          //event.inputBuffer.copyFromChannel(buffer_channels[1],1);
-          
+          event.inputBuffer.copyFromChannel(buffer_channels[0],0);
+          event.inputBuffer.copyFromChannel(buffer_channels[1],1);
+          /*
           for (var ch = 0; ch < numChannels; ++ch){
-            buffer[ch] = event.inputBuffer.getChannelData(ch);
+            //buffer[ch] = event.inputBuffer.getChannelData(ch);
             //buffer_channels[ch] = new Float32Array(this.processor.bufferSize);
-            //event.inputBuffer.copyFromChannel(buffer_channels[ch],ch);
-          }
+            event.inputBuffer.copyFromChannel(buffer_channels[ch],ch);
+          }*/
 
           //worker.postMessage({ command: "record", buffer: buffer_channels }, buffer_channels);
           worker.postMessage({ command: "record", buffer: buffer_channels });
-          //pending_buffers +=1;
+          pending_buffers +=1;
           lastPlayBackTime = event.playbackTime;
           //console.log(buffer_channels[0].length)
         };
